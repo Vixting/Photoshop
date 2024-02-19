@@ -48,11 +48,14 @@ public class Photoshop extends Application {
         slider.setShowTickMarks(true);
 
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (slider == resizeSlider) {
+            if (slider == gammaSlider) {
+                String gammaEffect = newValue.doubleValue() < 1.0 ? "Darker" : "Brighter";
+                valueLabel.setText(String.format("Gamma: %.2f (%s)", newValue.doubleValue(), gammaEffect));
+            } else if (slider == resizeSlider) {
+                String resizeEffect = newValue.doubleValue() < 1.0 ? "Smaller" : "Larger";
                 lastScale = newValue.doubleValue();
-                valueLabel.setText(String.format("Resize: %.2fx", newValue.doubleValue()));
-            } else if (slider == gammaSlider) {
-                valueLabel.setText(String.format("Gamma: %.2f", newValue.doubleValue()));
+
+                valueLabel.setText(String.format("Resize: %.2fx (%s)", newValue.doubleValue(), resizeEffect));
             }
 
             debouncePause.setOnFinished(event -> updateImage(originalImage));
@@ -101,7 +104,14 @@ public class Photoshop extends Application {
                 imageView
         );
 
+        gammaSlider.setMajorTickUnit(1);
+        gammaSlider.setMinorTickCount(4);
+
+        resizeSlider.setMajorTickUnit(1);
+        resizeSlider.setMinorTickCount(4);
+
         Scene scene = new Scene(root, 1300, 1300);
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.show();
     }

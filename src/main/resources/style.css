@@ -1,0 +1,88 @@
+.root {
+    -fx-font-family: 'Arial';
+    -fx-font-size: 14px;
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: #dcdcdc;
+}
+
+.label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #e7e7e7;
+}
+
+.button, .combo-box {
+    -fx-pref-width: 150px;
+    -fx-font-size: 13px;
+}
+
+.button {
+    -fx-background-color: #3c3f41;
+    -fx-border-color: #3a3a3a;
+    -fx-text-fill: #dcdcdc;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #464646;
+}
+
+.combo-box {
+    -fx-background-color: #4e5052;
+    -fx-text-fill: #e7e7e7;
+    -fx-cursor: hand;
+    -fx-border-color: #4e5052;
+    -fx-border-width: 2;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #dcdcdc;
+}
+
+.combo-box:hover {
+    -fx-background-color: #565859;
+}
+
+.slider {
+    -fx-pref-height: 26px;
+    -fx-font-size: 12px;
+    -fx-control-inner-background: #2e2e2e;
+}
+
+.slider .track {
+    -fx-stroke: #3949ab;
+    -fx-stroke-width: 3;
+    -fx-background-color: #3949ab;
+    -fx-fill: #3949ab;
+    -fx-opacity: 0.5;
+}
+
+.slider .thumb {
+    -fx-background-color: #1e88e5;
+    -fx-background-radius: 4em;
+    -fx-border-color: #1e88e5;
+    -fx-border-width: 3;
+    -fx-border-style: solid;
+    -fx-effect: dropshadow( one-pass-box , black , 8 , 0.0 , 2 , 2 );
+}
+
+.slider .tick-mark {
+    -fx-stroke: #1e88e5;
+    -fx-stroke-width: 2;
+    -fx-opacity: 0.7;
+}
+
+.slider .tick-label {
+    -fx-font-size: 11px;
+    -fx-fill: #e7e7e7;
+}
+
+.slider .thumb:hover {
+    -fx-background-color: #2196f3; /* Adjust thumb color on hover */
+}
+
+.slider .minor-tick-mark {
+    -fx-stroke: #1e88e5; /* Color of the minor tick marks */
+    -fx-stroke-width: 1; /* Adjust the width of the minor tick marks */
+    -fx-opacity: 0.5; /* Adjust opacity of minor tick marks */
+}
