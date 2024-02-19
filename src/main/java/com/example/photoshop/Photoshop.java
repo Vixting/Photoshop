@@ -40,14 +40,36 @@ public class Photoshop extends Application {
         launch(args);
     }
 
+    private final PauseTransition debouncePause = new PauseTransition(Duration.millis(1));
+
+    private void setupSliderWithDebounce(Slider slider, Label valueLabel, Image originalImage) {
+        slider.setShowTickLabels(true);
+        slider.setShowTickMarks(true);
+
+        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (slider == resizeSlider) {
+                lastScale = newValue.doubleValue();
+                valueLabel.setText(String.format("Resize: %.2fx", newValue.doubleValue()));
+            } else if (slider == gammaSlider) {
+                valueLabel.setText(String.format("Gamma: %.2f", newValue.doubleValue()));
+            }
+
+            debouncePause.setOnFinished(event -> updateImage(originalImage));
+            debouncePause.playFromStart();
+        });
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Mark's CS-256 application");
         Image originalImage = new Image(new FileInputStream("src/main/java/com/example/photoshop/raytrace.jpg"));
         imageView.setImage(originalImage);
 
-        setupSliderWithDebounce(gammaSlider, 0.5, 1, originalImage);
-        setupSliderWithDebounce(resizeSlider, 0.5, 1, originalImage);
+        Label gammaValueLabel = new Label("Gamma: 1.00"); // Initial value for gamma
+        Label resizeValueLabel = new Label("Resize: 1.00x"); // Initial value for resize
+
+        setupSliderWithDebounce(gammaSlider, gammaValueLabel, originalImage);
+        setupSliderWithDebounce(resizeSlider, resizeValueLabel, originalImage);
 
         nnCheckbox.selectedProperty().addListener(e -> {
             interpolationLabel.setText("Interpolation: " + (nnCheckbox.isSelected() ? "Nearest Neighbour" : "Bilinear"));
@@ -62,8 +84,8 @@ public class Photoshop extends Application {
         VBox root = new VBox(10); // added spacing
         root.setPadding(new Insets(15, 20, 15, 20)); // added padding
         root.getChildren().addAll(
-                new Label("Gamma Correction"), gammaSlider,
-                new Label("Resize Image"), resizeSlider,
+                new Label("Gamma Correction"), gammaSlider, gammaValueLabel,
+                new Label("Resize Image"), resizeSlider, resizeValueLabel,
                 nnCheckbox, interpolationLabel,
                 laplacianButton, imageView
         );
@@ -71,30 +93,6 @@ public class Photoshop extends Application {
         primaryStage.setScene(new Scene(root, 400, 600));
         primaryStage.show();
     }
-
-    private void configureSlider(Slider slider, double majorTickUnit, int minorTickCount) {
-        slider.setShowTickLabels(true);
-        slider.setShowTickMarks(true);
-        slider.setMajorTickUnit(majorTickUnit);
-        slider.setMinorTickCount(minorTickCount);
-        slider.setSnapToTicks(true);
-    }
-
-    private void setupSliderWithDebounce(Slider slider, double majorTickUnit, int minorTickCount, Image originalImage) {
-        configureSlider(slider, majorTickUnit, minorTickCount);
-        PauseTransition pause = new PauseTransition(Duration.millis(200));
-
-        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (slider == resizeSlider) {
-                lastScale = newValue.doubleValue();
-            }
-
-            pause.setOnFinished(event -> updateImage(originalImage));
-            pause.playFromStart();
-        });
-    }
-
-
 
 
     private void updateImage(Image originalImage) {
@@ -154,6 +152,7 @@ public class Photoshop extends Application {
         WritableImage writableImage = new WritableImage(width, height);
         PixelReader reader = image.getPixelReader();
         PixelWriter writer = writableImage.getPixelWriter();
+
         double[] gammaLUT = new double[256];
         for (int i = 0; i < 256; i++) {
             gammaLUT[i] = Math.pow(i / 255.0, gamma);
@@ -171,6 +170,7 @@ public class Photoshop extends Application {
         }
         return writableImage;
     }
+
 
     private Color crossCorrelate(PixelReader reader, int x, int y, int width, int height) {
         double red = 0, green = 0, blue = 0;
@@ -212,5 +212,4 @@ public class Photoshop extends Application {
 
         return result;
     }
-
 }
