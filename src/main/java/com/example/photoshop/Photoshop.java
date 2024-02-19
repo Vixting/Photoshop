@@ -1,5 +1,9 @@
 package com.example.photoshop;
 
+import com.example.photoshop.filter.FilterFactory;
+import com.example.photoshop.filter.Filters;
+import com.example.photoshop.filter.GammaCorrectionFilter;
+import com.example.photoshop.filter.LaplacianFilter;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -29,13 +33,6 @@ public class Photoshop extends Application {
     private String currentInterpolationMethod = "Bilinear";
     private String currentFilter = "None";
     private double lastScale = 1.0;
-    private static final int[][] LAPLACIAN_FILTER = {
-            {-4, -1, 0, -1, -4},
-            {-1, 2, 3, 2, -1},
-            {0, 3, 4, 3, 0},
-            {-1, 2, 3, 2, -1},
-            {-4, -1, 0, -1, -4}
-    };
 
     public static void main(String[] args) {
         launch(args);
@@ -82,8 +79,9 @@ public class Photoshop extends Application {
             updateImage(originalImage);
         });
 
-        filterComboBox.getItems().addAll("None", "Laplacian");
+        filterComboBox.getItems().addAll("None");
         filterComboBox.setValue("None");
+        filterComboBox.getItems().addAll(FilterFactory.getFilterNames());
         filterComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             currentFilter = newValue;
             updateImage(originalImage);
@@ -130,7 +128,7 @@ public class Photoshop extends Application {
                 double scaleX = x / lastScale;
                 double scaleY = y / lastScale;
                 Color color;
-                if (currentInterpolationMethod.equals("Nearest Neighbor")) {
+                if ("Nearest Neighbor".equals(currentInterpolationMethod)) {
                     color = getColorSafe(reader, (int) scaleX, (int) scaleY, originalWidth, originalHeight);
                 } else {
                     color = bilinearInterpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
@@ -141,15 +139,16 @@ public class Photoshop extends Application {
             }
         });
 
-        Image processedImage = applyGammaCorrection(resizedImage, gammaSlider.getValue());
-        if (currentFilter.equals("Laplacian")) {
-            processedImage = applyLaplacianFilter(processedImage);
+        Image finalImage = new GammaCorrectionFilter(gammaSlider.getValue()).applyFilter(resizedImage);
+
+        if (!"None".equals(currentFilter)) {
+            Filters filter = FilterFactory.createFilter(currentFilter, gammaSlider.getValue());
+            finalImage = filter.applyFilter(finalImage);
         }
 
-        Image finalProcessedImage = processedImage;
+        Image finalProcessedImage = finalImage;
         Platform.runLater(() -> imageView.setImage(finalProcessedImage));
     }
-
 
     private Color bilinearInterpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
         int xFloor = (int) x, yFloor = (int) y;
@@ -179,82 +178,5 @@ public class Photoshop extends Application {
                 start.getGreen() + fraction * (end.getGreen() - start.getGreen()),
                 start.getBlue() + fraction * (end.getBlue() - start.getBlue()), 1.0
         );
-    }
-
-    private Image applyGammaCorrection(Image image, double gamma) {
-        int width = (int) image.getWidth(), height = (int) image.getHeight();
-        WritableImage correctedImage = new WritableImage(width, height);
-        PixelReader reader = image.getPixelReader();
-        PixelWriter writer = correctedImage.getPixelWriter();
-
-        double inverseGamma = 1 / gamma;
-        double[] gammaLUT = new double[256];
-        for (int i = 0; i < 256; i++) {
-            gammaLUT[i] = Math.pow(i / 255.0, inverseGamma);
-        }
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color originalColor = reader.getColor(x, y);
-                writer.setColor(x, y, new Color(
-                        gammaLUT[(int) (originalColor.getRed() * 255)],
-                        gammaLUT[(int) (originalColor.getGreen() * 255)],
-                        gammaLUT[(int) (originalColor.getBlue() * 255)], 1.0
-                ));
-            }
-        }
-        return correctedImage;
-    }
-
-
-    private Image applyLaplacianFilter(Image image) {
-        int width = (int) image.getWidth();
-        int height = (int) image.getHeight();
-        WritableImage result = new WritableImage(width, height);
-        PixelReader reader = image.getPixelReader();
-        PixelWriter writer = result.getPixelWriter();
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = crossCorrelate(reader, x, y, width, height);
-                writer.setColor(x, y, color);
-            }
-        }
-
-        return result;
-    }
-
-    private Color crossCorrelate(PixelReader reader, int x, int y, int width, int height) {
-        double red = 0, green = 0, blue = 0;
-        int filterSize = LAPLACIAN_FILTER.length;
-
-        for (int filterY = 0; filterY < filterSize; filterY++) {
-            for (int filterX = 0; filterX < filterSize; filterX++) {
-                int imageX = x - filterSize / 2 + filterX;
-                int imageY = y - filterSize / 2 + filterY;
-
-                if (imageX < 0 || imageX >= width || imageY < 0 || imageY >= height) {
-                    continue;
-                }
-
-                Color pixelColor = reader.getColor(imageX, imageY);
-                int filterValue = LAPLACIAN_FILTER[filterY][filterX];
-
-                red += pixelColor.getRed() * filterValue;
-                green += pixelColor.getGreen() * filterValue;
-                blue += pixelColor.getBlue() * filterValue;
-            }
-        }
-
-        red = (red + 4) / 8;
-        green = (green + 4) / 8;
-        blue = (blue + 4) / 8;
-
-        return new Color(clamp(red), clamp(green), clamp(blue), 1.0);
-    }
-
-    private double clamp(double value) {
-        if (value < 0.0) return 0.0;
-        return Math.min(value, 1.0);
     }
 }
