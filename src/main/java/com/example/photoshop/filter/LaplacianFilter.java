@@ -15,6 +15,7 @@ public class LaplacianFilter extends Filters {
             {-1, 2, 3, 2, -1},
             {-4, -1, 0, -1, -4}
     };
+
     public Image applyFilter(Image image) {
         int width = (int) image.getWidth();
         int height = (int) image.getHeight();
@@ -41,11 +42,10 @@ public class LaplacianFilter extends Filters {
                 int imageX = x - filterSize / 2 + filterX;
                 int imageY = y - filterSize / 2 + filterY;
 
-                if (imageX < 0 || imageX >= width || imageY < 0 || imageY >= height) {
-                    continue;
-                }
+                imageX = Math.max(0, Math.min(imageX, width - 1));
+                imageY = Math.max(0, Math.min(imageY, height - 1));
 
-                Color pixelColor = reader.getColor(imageX, imageY);
+                Color pixelColor = getColor(reader, imageX, imageY);
                 int filterValue = LAPLACIAN_FILTER[filterY][filterX];
 
                 red += pixelColor.getRed() * filterValue;
@@ -54,11 +54,19 @@ public class LaplacianFilter extends Filters {
             }
         }
 
-        red = (red + 4) / 8;
-        green = (green + 4) / 8;
-        blue = (blue + 4) / 8;
+        red = clamp((red + 4) / 8);
+        green = clamp((green + 4) / 8);
+        blue = clamp((blue + 4) / 8);
 
-        return new Color(clamp(red), clamp(green), clamp(blue), 1.0);
+        return new Color(red, green, blue, 1.0);
+    }
+
+    private Color getColor(PixelReader reader, int x, int y) {
+        try {
+            return reader.getColor(x, y);
+        } catch (Exception e) {
+            return Color.BLACK;
+        }
     }
 
     private double clamp(double value) {

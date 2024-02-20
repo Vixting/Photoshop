@@ -3,7 +3,8 @@ package com.example.photoshop;
 import com.example.photoshop.filter.FilterFactory;
 import com.example.photoshop.filter.Filters;
 import com.example.photoshop.filter.GammaCorrectionFilter;
-import com.example.photoshop.filter.LaplacianFilter;
+import com.example.photoshop.interploators.Interpolator;
+import com.example.photoshop.interploators.InterpolatorFactory;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -28,8 +29,8 @@ public class Photoshop extends Application {
     private final ImageView imageView = new ImageView();
     private final ComboBox<String> interpolationComboBox = new ComboBox<>();
     private final ComboBox<String> filterComboBox = new ComboBox<>();
-    private final Slider gammaSlider = new Slider(0.1, 2.0, 1.0);
-    private final Slider resizeSlider = new Slider(0.1, 2.0, 1.0);
+    private final Slider gammaSlider = new Slider(0.1, 5.0, 1.0);
+    private final Slider resizeSlider = new Slider(0.1, 5.0, 1.0);
     private String currentInterpolationMethod = "Bilinear";
     private String currentFilter = "None";
     private double lastScale = 1.0;
@@ -72,7 +73,7 @@ public class Photoshop extends Application {
         setupSliderWithDebounce(gammaSlider, gammaValueLabel, originalImage);
         setupSliderWithDebounce(resizeSlider, resizeValueLabel, originalImage);
 
-        interpolationComboBox.getItems().addAll("Nearest Neighbor", "Bilinear");
+        interpolationComboBox.getItems().addAll(InterpolatorFactory.getInterpolatorNames());
         interpolationComboBox.setValue("Bilinear");
         interpolationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             currentInterpolationMethod = newValue;
@@ -123,16 +124,13 @@ public class Photoshop extends Application {
         PixelReader reader = originalImage.getPixelReader();
         PixelWriter writer = resizedImage.getPixelWriter();
 
+        Interpolator interpolator = InterpolatorFactory.createInterpolator(currentInterpolationMethod);
+
         IntStream.range(0, newHeight).parallel().forEach(y -> {
             for (int x = 0; x < newWidth; x++) {
                 double scaleX = x / lastScale;
                 double scaleY = y / lastScale;
-                Color color;
-                if ("Nearest Neighbor".equals(currentInterpolationMethod)) {
-                    color = getColorSafe(reader, (int) scaleX, (int) scaleY, originalWidth, originalHeight);
-                } else {
-                    color = bilinearInterpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
-                }
+                Color color = interpolator.interpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
                 synchronized (writer) {
                     writer.setColor(x, y, color);
                 }
@@ -150,33 +148,4 @@ public class Photoshop extends Application {
         Platform.runLater(() -> imageView.setImage(finalProcessedImage));
     }
 
-    private Color bilinearInterpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
-        int xFloor = (int) x, yFloor = (int) y;
-        double xFraction = x - xFloor, yFraction = y - yFloor;
-
-        Color topLeft = getColorSafe(reader, xFloor, yFloor, maxWidth, maxHeight),
-                topRight = getColorSafe(reader, xFloor + 1, yFloor, maxWidth, maxHeight),
-                bottomLeft = getColorSafe(reader, xFloor, yFloor + 1, maxWidth, maxHeight),
-                bottomRight = getColorSafe(reader, xFloor + 1, yFloor + 1, maxWidth, maxHeight);
-
-        Color topInterpolated = linearInterpolate(topLeft, topRight, xFraction);
-        Color bottomInterpolated = linearInterpolate(bottomLeft, bottomRight, xFraction);
-
-        return linearInterpolate(topInterpolated, bottomInterpolated, yFraction);
-    }
-
-    private Color getColorSafe(PixelReader reader, int x, int y, int maxWidth, int maxHeight) {
-        if (x >= 0 && y >= 0 && x < maxWidth && y < maxHeight) {
-            return reader.getColor(x, y);
-        }
-        return Color.BLACK;
-    }
-
-    private Color linearInterpolate(Color start, Color end, double fraction) {
-        return new Color(
-                start.getRed() + fraction * (end.getRed() - start.getRed()),
-                start.getGreen() + fraction * (end.getGreen() - start.getGreen()),
-                start.getBlue() + fraction * (end.getBlue() - start.getBlue()), 1.0
-        );
-    }
 }
