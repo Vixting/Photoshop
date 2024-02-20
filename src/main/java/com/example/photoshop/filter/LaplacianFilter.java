@@ -6,7 +6,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-public class LaplacianFilter extends Filters {
+public class LaplacianFilter implements Filters {
 
     private static final int[][] LAPLACIAN_FILTER = {
             {-4, -1, 0, -1, -4},
@@ -34,7 +34,7 @@ public class LaplacianFilter extends Filters {
     }
 
     private Color crossCorrelate(PixelReader reader, int x, int y, int width, int height) {
-        double red = 0, green = 0, blue = 0;
+        double intensity = 0;
         int filterSize = LAPLACIAN_FILTER.length;
 
         for (int filterY = 0; filterY < filterSize; filterY++) {
@@ -46,19 +46,15 @@ public class LaplacianFilter extends Filters {
                 imageY = Math.max(0, Math.min(imageY, height - 1));
 
                 Color pixelColor = getColor(reader, imageX, imageY);
+                double gray = (pixelColor.getRed() + pixelColor.getGreen() + pixelColor.getBlue()) / 3;
                 int filterValue = LAPLACIAN_FILTER[filterY][filterX];
 
-                red += pixelColor.getRed() * filterValue;
-                green += pixelColor.getGreen() * filterValue;
-                blue += pixelColor.getBlue() * filterValue;
+                intensity += gray * filterValue;
             }
         }
 
-        red = clamp((red + 4) / 8);
-        green = clamp((green + 4) / 8);
-        blue = clamp((blue + 4) / 8);
-
-        return new Color(red, green, blue, 1.0);
+        intensity = clamp((intensity + 4) / 8);
+        return new Color(intensity, intensity, intensity, 1.0);
     }
 
     private Color getColor(PixelReader reader, int x, int y) {

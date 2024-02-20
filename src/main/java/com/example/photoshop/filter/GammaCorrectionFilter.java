@@ -6,7 +6,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-public class GammaCorrectionFilter extends Filters {
+public class GammaCorrectionFilter implements Filters {
     private final double[] gammaLUT;
 
     public GammaCorrectionFilter(double gamma) {

@@ -5,7 +5,6 @@ import com.example.photoshop.filter.Filters;
 import com.example.photoshop.filter.GammaCorrectionFilter;
 import com.example.photoshop.interploators.Interpolator;
 import com.example.photoshop.interploators.InterpolatorFactory;
-import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -18,10 +17,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-
 import java.io.FileInputStream;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 public class Photoshop extends Application {
@@ -33,32 +33,11 @@ public class Photoshop extends Application {
     private final Slider resizeSlider = new Slider(0.1, 5.0, 1.0);
     private String currentInterpolationMethod = "Bilinear";
     private String currentFilter = "None";
-    private double lastScale = 1.0;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private Future<?> lastTask;
 
     public static void main(String[] args) {
         launch(args);
-    }
-
-    private final PauseTransition debouncePause = new PauseTransition(Duration.millis(1));
-
-    private void setupSliderWithDebounce(Slider slider, Label valueLabel, Image originalImage) {
-        slider.setShowTickLabels(true);
-        slider.setShowTickMarks(true);
-
-        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (slider == gammaSlider) {
-                String gammaEffect = newValue.doubleValue() < 1.0 ? "Darker" : "Brighter";
-                valueLabel.setText(String.format("Gamma: %.2f (%s)", newValue.doubleValue(), gammaEffect));
-            } else if (slider == resizeSlider) {
-                String resizeEffect = newValue.doubleValue() < 1.0 ? "Smaller" : "Larger";
-                lastScale = newValue.doubleValue();
-
-                valueLabel.setText(String.format("Resize: %.2fx (%s)", newValue.doubleValue(), resizeEffect));
-            }
-
-            debouncePause.setOnFinished(event -> updateImage(originalImage));
-            debouncePause.playFromStart();
-        });
     }
 
     @Override
@@ -77,7 +56,7 @@ public class Photoshop extends Application {
         interpolationComboBox.setValue("Bilinear");
         interpolationComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             currentInterpolationMethod = newValue;
-            updateImage(originalImage);
+            updateImageAsync(originalImage);
         });
 
         filterComboBox.getItems().addAll("None");
@@ -85,7 +64,7 @@ public class Photoshop extends Application {
         filterComboBox.getItems().addAll(FilterFactory.getFilterNames());
         filterComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             currentFilter = newValue;
-            updateImage(originalImage);
+            updateImageAsync(originalImage);
         });
 
         HBox dropdownMenus = new HBox(10);
@@ -103,49 +82,70 @@ public class Photoshop extends Application {
                 imageView
         );
 
-        gammaSlider.setMajorTickUnit(1);
-        gammaSlider.setMinorTickCount(4);
-
-        resizeSlider.setMajorTickUnit(1);
-        resizeSlider.setMinorTickCount(4);
-
         Scene scene = new Scene(root, 1300, 1300);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    private void updateImage(Image originalImage) {
-        int originalWidth = (int) originalImage.getWidth();
-        int originalHeight = (int) originalImage.getHeight();
-        int newWidth = (int) (originalWidth * lastScale);
-        int newHeight = (int) (originalHeight * lastScale);
-        WritableImage resizedImage = new WritableImage(newWidth, newHeight);
-        PixelReader reader = originalImage.getPixelReader();
-        PixelWriter writer = resizedImage.getPixelWriter();
+    private void setupSliderWithDebounce(Slider slider, Label valueLabel, Image originalImage) {
+        slider.setShowTickLabels(true);
+        slider.setShowTickMarks(true);
+        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            String label = slider == gammaSlider ? "Gamma" : "Resize";
+            String effect = newValue.doubleValue() < 1.0 ? (slider == gammaSlider ? "Darker" : "Smaller") : (slider == gammaSlider ? "Brighter" : "Larger");
+            valueLabel.setText(String.format("%s: %.2f (%s)", label, newValue.doubleValue(), effect));
+            updateImageAsync(originalImage);
+        });
+    }
 
-        Interpolator interpolator = InterpolatorFactory.createInterpolator(currentInterpolationMethod);
+    private void updateImageAsync(Image originalImage) {
+        if (lastTask != null && !lastTask.isDone()) {
+            lastTask.cancel(true);
+        }
 
-        IntStream.range(0, newHeight).parallel().forEach(y -> {
-            for (int x = 0; x < newWidth; x++) {
-                double scaleX = x / lastScale;
-                double scaleY = y / lastScale;
-                Color color = interpolator.interpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
-                synchronized (writer) {
+        double currentScale = resizeSlider.getValue();
+        double currentGamma = gammaSlider.getValue();
+
+        lastTask = executorService.submit(() -> {
+            int originalWidth = (int) originalImage.getWidth();
+            int originalHeight = (int) originalImage.getHeight();
+            int newWidth = (int) (originalWidth * currentScale);
+            int newHeight = (int) (originalHeight * currentScale);
+            WritableImage resizedImage = new WritableImage(newWidth, newHeight);
+            PixelReader reader = originalImage.getPixelReader();
+            PixelWriter writer = resizedImage.getPixelWriter();
+
+            Interpolator interpolator = InterpolatorFactory.createInterpolator(currentInterpolationMethod);
+
+            for (int y = 0; y < newHeight; y++) {
+                for (int x = 0; x < newWidth; x++) {
+                    double scaleX = (x / currentScale);
+                    double scaleY = (y / currentScale);
+                    Color color = interpolator.interpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
                     writer.setColor(x, y, color);
                 }
             }
+
+            Image finalImage = resizedImage;
+            if (currentGamma != 1.0) {
+                finalImage = new GammaCorrectionFilter(currentGamma).applyFilter(finalImage);
+            }
+
+            if (!"None".equals(currentFilter)) {
+                Filters filter = FilterFactory.createFilter(currentFilter, currentGamma);
+                finalImage = filter.applyFilter(finalImage);
+            }
+
+            Image finalProcessedImage = finalImage;
+            Platform.runLater(() -> imageView.setImage(finalProcessedImage));
         });
-
-        Image finalImage = new GammaCorrectionFilter(gammaSlider.getValue()).applyFilter(resizedImage);
-
-        if (!"None".equals(currentFilter)) {
-            Filters filter = FilterFactory.createFilter(currentFilter, gammaSlider.getValue());
-            finalImage = filter.applyFilter(finalImage);
-        }
-
-        Image finalProcessedImage = finalImage;
-        Platform.runLater(() -> imageView.setImage(finalProcessedImage));
     }
 
+
+    @Override
+    public void stop() throws Exception {
+        executorService.shutdown();
+        super.stop();
+    }
 }
