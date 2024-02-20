@@ -16,6 +16,7 @@ public class LaplacianFilter implements Filters {
             {-4, -1, 0, -1, -4}
     };
 
+    @Override
     public Image applyFilter(Image image) {
         int width = (int) image.getWidth();
         int height = (int) image.getHeight();
@@ -25,48 +26,43 @@ public class LaplacianFilter implements Filters {
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                Color color = crossCorrelate(reader, x, y, width, height);
-                writer.setColor(x, y, color);
+                writer.setColor(x, y, applyKernel(reader, x, y, width, height));
             }
         }
 
         return result;
     }
 
-    private Color crossCorrelate(PixelReader reader, int x, int y, int width, int height) {
+    private Color applyKernel(PixelReader reader, int x, int y, int width, int height) {
         double intensity = 0;
-        int filterSize = LAPLACIAN_FILTER.length;
+        int kernelSize = LAPLACIAN_FILTER.length;
 
-        for (int filterY = 0; filterY < filterSize; filterY++) {
-            for (int filterX = 0; filterX < filterSize; filterX++) {
-                int imageX = x - filterSize / 2 + filterX;
-                int imageY = y - filterSize / 2 + filterY;
+        for (int dy = 0; dy < kernelSize; dy++) {
+            for (int dx = 0; dx < kernelSize; dx++) {
+                int imageX = clamp(x - kernelSize / 2 + dx, 0, width - 1);
+                int imageY = clamp(y - kernelSize / 2 + dy, 0, height - 1);
 
-                imageX = Math.max(0, Math.min(imageX, width - 1));
-                imageY = Math.max(0, Math.min(imageY, height - 1));
-
-                Color pixelColor = getColor(reader, imageX, imageY);
-                double gray = (pixelColor.getRed() + pixelColor.getGreen() + pixelColor.getBlue()) / 3;
-                int filterValue = LAPLACIAN_FILTER[filterY][filterX];
-
-                intensity += gray * filterValue;
+                Color pixelColor = reader.getColor(imageX, imageY);
+                double grayScale = (pixelColor.getRed() + pixelColor.getGreen() + pixelColor.getBlue()) / 3;
+                intensity += grayScale * LAPLACIAN_FILTER[dy][dx];
             }
         }
 
-        intensity = clamp((intensity + 4) / 8);
+        intensity = normalizeIntensity(intensity);
         return new Color(intensity, intensity, intensity, 1.0);
     }
 
-    private Color getColor(PixelReader reader, int x, int y) {
-        try {
-            return reader.getColor(x, y);
-        } catch (Exception e) {
-            return Color.BLACK;
-        }
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(value, max));
     }
 
-    private double clamp(double value) {
-        if (value < 0.0) return 0.0;
-        return Math.min(value, 1.0);
+    private double normalizeIntensity(double intensity) {
+        intensity = (intensity + 4) / 8;
+        return clamp(intensity, 0.0, 1.0);
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
     }
 }
+

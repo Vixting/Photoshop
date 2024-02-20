@@ -18,7 +18,6 @@ public class GammaCorrectionFilter implements Filters {
 
     @Override
     public Image applyFilter(Image image) {
-        System.out.println("Applying gamma correction filter");
         int width = (int) image.getWidth();
         int height = (int) image.getHeight();
         WritableImage correctedImage = new WritableImage(width, height);
@@ -27,8 +26,7 @@ public class GammaCorrectionFilter implements Filters {
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                Color originalColor = getColor(reader, x, y);
-                writer.setColor(x, y, applyGammaCorrection(originalColor));
+                writer.setColor(x, y, applyGammaCorrection(reader.getColor(x, y)));
             }
         }
 
@@ -38,8 +36,8 @@ public class GammaCorrectionFilter implements Filters {
     private double[] createGammaLUT(double gamma) {
         double[] lut = new double[256];
         double inverseGamma = 1.0 / gamma;
-        for (int i = 0; i < 256; i++) {
-            lut[i] = Math.pow((double) i / 255.0, inverseGamma);
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = Math.pow(i / 255.0, inverseGamma);
         }
         return lut;
     }
@@ -51,13 +49,5 @@ public class GammaCorrectionFilter implements Filters {
                 gammaLUT[(int) (color.getBlue() * 255)],
                 color.getOpacity()
         );
-    }
-
-    private Color getColor(PixelReader reader, int x, int y) {
-        try {
-            return reader.getColor(x, y);
-        } catch (Exception e) {
-            return Color.BLACK;
-        }
     }
 }
