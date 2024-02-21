@@ -9,16 +9,14 @@ public class BilinearInterpolator implements Interpolator {
     public Color interpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
         int xFloor = clamp((int) Math.floor(x), 0, maxWidth - 1);
         int yFloor = clamp((int) Math.floor(y), 0, maxHeight - 1);
-        int xCeil = clamp(xFloor + 1, 0, maxWidth - 1);
-        int yCeil = clamp(yFloor + 1, 0, maxHeight - 1);
 
         double xFraction = x - xFloor;
         double yFraction = y - yFloor;
 
         Color topLeft = getColor(reader, xFloor, yFloor);
-        Color topRight = getColor(reader, xCeil, yFloor);
-        Color bottomLeft = getColor(reader, xFloor, yCeil);
-        Color bottomRight = getColor(reader, xCeil, yCeil);
+        Color topRight = getColor(reader, xFloor + 1, yFloor);
+        Color bottomLeft = getColor(reader, xFloor, yFloor + 1);
+        Color bottomRight = getColor(reader, xFloor + 1, yFloor + 1);
 
         Color topInterpolated = interpolateColor(topLeft, topRight, xFraction);
         Color bottomInterpolated = interpolateColor(bottomLeft, bottomRight, xFraction);
@@ -39,17 +37,15 @@ public class BilinearInterpolator implements Interpolator {
     }
 
     private Color interpolateColor(Color start, Color end, double fraction) {
-        double red = interpolateComponent(start.getRed(), end.getRed(), fraction);
-        double green = interpolateComponent(start.getGreen(), end.getGreen(), fraction);
-        double blue = interpolateComponent(start.getBlue(), end.getBlue(), fraction);
-        double alpha = interpolateComponent(start.getOpacity(), end.getOpacity(), fraction);
-
-        return new Color(red, green, blue, alpha);
+        return new Color(
+                interpolateComponent(start.getRed(), end.getRed(), fraction),
+                interpolateComponent(start.getGreen(), end.getGreen(), fraction),
+                interpolateComponent(start.getBlue(), end.getBlue(), fraction),
+                interpolateComponent(start.getOpacity(), end.getOpacity(), fraction)
+        );
     }
 
     private double interpolateComponent(double start, double end, double fraction) {
         return start + fraction * (end - start);
     }
 }
-
-
