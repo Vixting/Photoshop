@@ -116,6 +116,7 @@ public class Photoshop extends Application {
             initialX = event.getX();
             initialY = event.getY();
         });
+
         imageView.setOnMouseDragged(event -> {
             double offsetX = event.getX() - initialX;
             double offsetY = event.getY() - initialY;
@@ -128,6 +129,7 @@ public class Photoshop extends Application {
             imageView.setTranslateX(newTranslateX);
             imageView.setTranslateY(newTranslateY);
         });
+
         imageView.setOnScroll(event -> {
             double zoomFactor = 1.05;
             double deltaY = event.getDeltaY();
@@ -195,26 +197,50 @@ public class Photoshop extends Application {
         }
     }
 
+    /**
+     * This method processes the original image by resizing it based on the provided scale and applying gamma correction.
+     * It also applies any selected interpolation method and filter to the image.
+     *
+     * @param originalImage The original image to be processed.
+     * @param scale The scale factor to be used for resizing the image. A scale of 1.0 means the image size remains the same.
+     * @param gamma The gamma correction factor to be applied to the image. A gamma of 1.0 means no gamma correction is applied.
+     * @return The processed image after resizing, gamma correction, and applying the selected interpolation method and filter.
+     */
     private Image processImage(Image originalImage, double scale, double gamma) {
+        // Get the original image dimensions
         int originalWidth = (int) originalImage.getWidth();
         int originalHeight = (int) originalImage.getHeight();
+
+        // Calculate the new dimensions based on the scale factor
         int newWidth = (int) (originalWidth * scale);
         int newHeight = (int) (originalHeight * scale);
 
+        // Create a new writable image with the new dimensions
         WritableImage resizedImage = new WritableImage(newWidth, newHeight);
+
+        // Get the pixel reader and writer for the original and new image respectively
         PixelReader reader = originalImage.getPixelReader();
         PixelWriter writer = resizedImage.getPixelWriter();
 
+        // Create an interpolator based on the selected interpolation method
         Interpolator interpolator = InterpolatorFactory.createInterpolator(currentInterpolationMethod);
+
+        // Loop over each pixel in the new image
         for (int y = 0; y < newHeight; y++) {
             for (int x = 0; x < newWidth; x++) {
+                // Calculate the corresponding coordinates in the original image
                 double scaleX = (x / scale);
                 double scaleY = (y / scale);
+
+                // Get the color of the corresponding pixel in the original image using the interpolator
                 Color color = interpolator.interpolate(reader, scaleX, scaleY, originalWidth, originalHeight);
+
+                // Set the color of the pixel in the new image
                 writer.setColor(x, y, color);
             }
         }
 
+        // Apply the selected filter and gamma correction to the new image and return it
         return applyFilters(resizedImage, gamma);
     }
 
