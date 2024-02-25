@@ -52,17 +52,16 @@ public class LaplacianFilter implements Filters {
         return new Color(intensity, intensity, intensity, 1.0);
     }
 
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(value, max));
+    private <T extends Comparable<T>> T clamp(T value, T min, T max) {
+        if (value.compareTo(min) < 0) return min;
+        if (value.compareTo(max) > 0) return max;
+        return value;
     }
+
 
     private double normalizeIntensity(double intensity) {
         intensity = (intensity + 4) / 8;
         return clamp(intensity, 0.0, 1.0);
-    }
-
-    private double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(value, max));
     }
 }
 

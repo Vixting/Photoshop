@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -39,6 +40,7 @@ public class Photoshop extends Application {
     private String currentInterpolationMethod = "Bilinear";
     private String currentFilter = "None";
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final Button resetButton = new Button("Reset Image");
     private Future<?> lastTask;
 
     public static void main(String[] args) {
@@ -50,10 +52,26 @@ public class Photoshop extends Application {
         return Math.min(value, max);
     }
 
+    private void resetImage(Image originalImage) {
+        if (lastTask != null && !lastTask.isDone()) {
+            lastTask.cancel(true);
+        }
+        imageView.setImage(originalImage);
+        imageView.setScaleX(1.0);
+        imageView.setScaleY(1.0);
+        imageView.setTranslateX(0);
+        imageView.setTranslateY(0);
+        gammaSlider.setValue(1.0);
+        resizeSlider.setValue(1.0);
+        interpolationComboBox.setValue("Bilinear");
+        filterComboBox.setValue("None");
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Mark's CS-256 application");
         Image originalImage = new Image(new FileInputStream("src/main/java/com/example/photoshop/raytrace.jpg"));
+        resetButton.setOnAction(event -> resetImage(originalImage));
         imageView.setImage(originalImage);
         Label gammaValueLabel = new Label("Gamma: 1.00");
         Label resizeValueLabel = new Label("Resize: 1.00x");
@@ -108,13 +126,19 @@ public class Photoshop extends Application {
                 new Label("Interpolation Method"), interpolationComboBox,
                 new Label("Filter"), filterComboBox
         );
+
+        HBox controls = new HBox(10, dropdownMenus, resetButton);
+        controls.setPadding(new Insets(10));
+
         VBox root = new VBox(10);
         root.setPadding(new Insets(15, 20, 15, 20));
+
         root.getChildren().addAll(
                 new Label("Gamma Correction"), gammaSlider, gammaValueLabel,
                 new Label("Resize Image"), resizeSlider, resizeValueLabel,
                 dropdownMenus,
-                imageView
+                imageView,
+                controls
         );
         Scene scene = new Scene(root, 1300, 1300);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm());
@@ -156,17 +180,20 @@ public class Photoshop extends Application {
                     writer.setColor(x, y, color);
                 }
             }
-            Image finalImage = resizedImage;
-            if (currentGamma != 1.0) {
-                finalImage = new GammaCorrectionFilter(currentGamma).applyFilter(finalImage);
-            }
-            if (!"None".equals(currentFilter)) {
-                Filters filter = FilterFactory.createFilter(currentFilter, currentGamma);
-                finalImage = filter.applyFilter(finalImage);
-            }
-            Image finalProcessedImage = finalImage;
-            Platform.runLater(() -> imageView.setImage(finalProcessedImage));
+            Image finalImage = applyFilters(resizedImage, currentGamma);
+            Platform.runLater(() -> imageView.setImage(finalImage));
         });
+    }
+
+    private Image applyFilters(Image image, double currentGamma) {
+        if (currentGamma != 1.0) {
+            image = new GammaCorrectionFilter(currentGamma).applyFilter(image);
+        }
+        if (!"None".equals(currentFilter)) {
+            Filters filter = FilterFactory.createFilter(currentFilter, currentGamma);
+            image = filter.applyFilter(image);
+        }
+        return image;
     }
 
     @Override
