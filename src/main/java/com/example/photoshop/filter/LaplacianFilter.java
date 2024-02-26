@@ -6,8 +6,15 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
+/**
+ * This class represents a Laplacian filter.
+ * It implements the Filters interface and overrides the applyFilter method to apply the Laplacian filter to an image.
+ */
 public class LaplacianFilter implements Filters {
 
+    /**
+     * The Laplacian filter matrix used for edge detection.
+     */
     private static final int[][] LAPLACIAN_FILTER = {
             {-4, -1, 0, -1, -4},
             {-1, 2, 3, 2, -1},
@@ -16,6 +23,12 @@ public class LaplacianFilter implements Filters {
             {-4, -1, 0, -1, -4}
     };
 
+    /**
+     * This method applies the Laplacian filter to an image.
+     *
+     * @param image The image to which the filter is to be applied.
+     * @return The image after applying the Laplacian filter.
+     */
     @Override
     public Image applyFilter(Image image) {
         int width = (int) image.getWidth();
@@ -58,10 +71,8 @@ public class LaplacianFilter implements Filters {
         return value;
     }
 
-
     private double normalizeIntensity(double intensity) {
         intensity = (intensity + 4) / 8;
         return clamp(intensity, 0.0, 1.0);
     }
 }
-

@@ -3,8 +3,22 @@ package com.example.photoshop.interploators;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
+/**
+ * This class represents a bilinear interpolator.
+ * It implements the Interpolator interface and overrides the interpolate method to apply bilinear interpolation.
+ */
 public class BilinearInterpolator implements Interpolator {
 
+    /**
+     * This method applies the bilinear interpolation to a pixel.
+     *
+     * @param reader The PixelReader of the image.
+     * @param x The x-coordinate of the pixel.
+     * @param y The y-coordinate of the pixel.
+     * @param maxWidth The maximum width of the image.
+     * @param maxHeight The maximum height of the image.
+     * @return The color of the interpolated pixel.
+     */
     @Override
     public Color interpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
         int xFloor = clamp((int) Math.floor(x), 0, maxWidth - 1);

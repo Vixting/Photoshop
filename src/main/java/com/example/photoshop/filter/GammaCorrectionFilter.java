@@ -50,12 +50,6 @@ public class GammaCorrectionFilter implements Filters {
         return correctedImage;
     }
 
-    /**
-     * This method creates a lookup table (LUT) for gamma correction.
-     *
-     * @param gamma The gamma value for the gamma correction.
-     * @return The lookup table for gamma correction.
-     */
     private double[] createGammaLUT(double gamma) {
         double[] lut = new double[256];
         double inverseGamma = 1.0 / gamma;
@@ -65,12 +59,6 @@ public class GammaCorrectionFilter implements Filters {
         return lut;
     }
 
-    /**
-     * This method applies gamma correction to a color.
-     *
-     * @param color The color to which gamma correction is to be applied.
-     * @return The color after applying gamma correction.
-     */
     private Color applyGammaCorrection(Color color) {
         return new Color(
                 gammaLUT[(int) (color.getRed() * 255)],

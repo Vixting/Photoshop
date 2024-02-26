@@ -26,14 +26,6 @@ public class NearestNeighborInterpolator implements Interpolator {
         return reader.getColor(nearestX, nearestY);
     }
 
-    /**
-     * This method clamps a value between a minimum and maximum value.
-     *
-     * @param value The value to be clamped.
-     * @param min The minimum value.
-     * @param max The maximum value.
-     * @return The clamped value.
-     */
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }

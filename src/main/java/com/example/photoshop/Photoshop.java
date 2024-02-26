@@ -28,6 +28,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+/**
+ * Photoshop is a JavaFX application for image processing. It allows users to apply various
+ * filters, perform gamma correction, resize images, and adjust using different interpolation methods.
+ * The application also supports basic image manipulation like zooming and dragging.
+ */
 public class Photoshop extends Application {
 
     private final ImageView imageView = new ImageView();
@@ -47,6 +52,14 @@ public class Photoshop extends Application {
         launch(args);
     }
 
+    /**
+     * Clamps a given value within a specified range.
+     *
+     * @param value The value to clamp.
+     * @param min   The minimum allowed value.
+     * @param max   The maximum allowed value.
+     * @return The clamped value.
+     */
     private double clamp(double value, double min, double max) {
         if (value < min) return min;
         return Math.min(value, max);
@@ -67,6 +80,12 @@ public class Photoshop extends Application {
         filterComboBox.setValue("None");
     }
 
+    /**
+     * Initializes and displays the JavaFX application window.
+     *
+     * @param primaryStage The primary stage for this application.
+     * @throws Exception if any error occurs during application start.
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Mark's CS-256 application");
@@ -255,6 +274,11 @@ public class Photoshop extends Application {
         return image;
     }
 
+    /**
+     * Invoked when the application should stop, and provides a chance to close resources.
+     *
+     * @throws Exception if any error occurs during application stop.
+     */
     @Override
     public void stop() throws Exception {
         executorService.shutdown();
