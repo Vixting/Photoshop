@@ -6,9 +6,20 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
+/**
+ * This class represents a gamma correction filter.
+ * It implements the Filters interface and overrides the applyFilter method to apply gamma correction to an image.
+ */
 public class GammaCorrectionFilter implements Filters {
     private final double[] gammaLUT;
 
+    /**
+     * Constructor for the GammaCorrectionFilter class.
+     * It takes a gamma value as input and creates a lookup table (LUT) for gamma correction.
+     *
+     * @param gamma The gamma value for the gamma correction. It must be a positive number.
+     * @throws IllegalArgumentException if the gamma value is not positive.
+     */
     public GammaCorrectionFilter(double gamma) {
         if (gamma <= 0) {
             throw new IllegalArgumentException("Gamma value must be positive");
@@ -16,6 +27,12 @@ public class GammaCorrectionFilter implements Filters {
         this.gammaLUT = createGammaLUT(gamma);
     }
 
+    /**
+     * This method applies the gamma correction filter to an image.
+     *
+     * @param image The image to which the filter is to be applied.
+     * @return The image after applying the gamma correction filter.
+     */
     @Override
     public Image applyFilter(Image image) {
         int width = (int) image.getWidth();
@@ -33,6 +50,12 @@ public class GammaCorrectionFilter implements Filters {
         return correctedImage;
     }
 
+    /**
+     * This method creates a lookup table (LUT) for gamma correction.
+     *
+     * @param gamma The gamma value for the gamma correction.
+     * @return The lookup table for gamma correction.
+     */
     private double[] createGammaLUT(double gamma) {
         double[] lut = new double[256];
         double inverseGamma = 1.0 / gamma;
@@ -42,6 +65,12 @@ public class GammaCorrectionFilter implements Filters {
         return lut;
     }
 
+    /**
+     * This method applies gamma correction to a color.
+     *
+     * @param color The color to which gamma correction is to be applied.
+     * @return The color after applying gamma correction.
+     */
     private Color applyGammaCorrection(Color color) {
         return new Color(
                 gammaLUT[(int) (color.getRed() * 255)],
