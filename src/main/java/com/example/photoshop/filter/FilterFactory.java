@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class is a factory for creating filter instances.
- * It maintains a map of filter names to their corresponding classes.
- * It provides methods to create a filter instance and to get the names of all available filters.
+ * Factory for creating filter instances.
+ * Maintains a map of filter names to their corresponding classes.
+ * Provides methods to create a filter instance and to get the names of all available filters.
  */
 public class FilterFactory {
     // Map of filter names to their corresponding classes
@@ -19,7 +19,7 @@ public class FilterFactory {
     }
 
     /**
-     * This method creates an instance of the specified filter.
+     * Creates an instance of the specified filter.
      * If the filter is a Gamma filter, it uses the provided gamma value.
      *
      * @param filterName The name of the filter to create an instance of.
@@ -40,7 +40,7 @@ public class FilterFactory {
     }
 
     /**
-     * This method returns the names of all available filters.
+     * Returns the names of all available filters.
      *
      * @return A set of names of all available filters.
      */
