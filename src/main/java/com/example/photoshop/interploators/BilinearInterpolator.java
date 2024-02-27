@@ -4,20 +4,20 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
 /**
- * This class represents a bilinear interpolator.
- * It implements the Interpolator interface and overrides the interpolate method to apply bilinear interpolation.
+ * Represents a bilinear interpolator.
+ * Implements the Interpolator interface and overrides the interpolate method to apply bilinear interpolation.
  */
 public class BilinearInterpolator implements Interpolator {
 
     /**
-     * This method applies the bilinear interpolation to a pixel.
+     * Applies the bilinear interpolation to a pixel.
      *
-     * @param reader The PixelReader of the image.
-     * @param x The x-coordinate of the pixel.
-     * @param y The y-coordinate of the pixel.
-     * @param maxWidth The maximum width of the image.
-     * @param maxHeight The maximum height of the image.
-     * @return The color of the interpolated pixel.
+     * @param reader PixelReader of the image.
+     * @param x x-coordinate of the pixel.
+     * @param y y-coordinate of the pixel.
+     * @param maxWidth Maximum width of the image.
+     * @param maxHeight Maximum height of the image.
+     * @return Color of the interpolated pixel.
      */
     @Override
     public Color interpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
