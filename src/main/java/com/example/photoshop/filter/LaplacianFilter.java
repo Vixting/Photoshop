@@ -7,13 +7,13 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
 /**
- * This class represents a Laplacian filter.
- * It implements the Filters interface and overrides the applyFilter method to apply the Laplacian filter to an image.
+ * Represents a Laplacian filter.
+ * Implements the Filters interface & overrides the applyFilter method to apply the Laplacian filter to an image.
  */
 public class LaplacianFilter implements Filters {
 
     /**
-     * The Laplacian filter matrix used for edge detection.
+     * Laplacian filter matrix used for edge detection.
      */
     private static final int[][] LAPLACIAN_FILTER = {
             {-4, -1, 0, -1, -4},
@@ -24,10 +24,10 @@ public class LaplacianFilter implements Filters {
     };
 
     /**
-     * This method applies the Laplacian filter to an image.
+     * Applies the Laplacian filter to an image.
      *
-     * @param image The image to which the filter is to be applied.
-     * @return The image after applying the Laplacian filter.
+     * @param image Image to which the filter is to be applied.
+     * @return Image after applying the Laplacian filter.
      */
     @Override
     public Image applyFilter(Image image) {

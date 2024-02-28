@@ -7,15 +7,14 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
 /**
- * This class represents a gamma correction filter.
- * It implements the Filters interface and overrides the applyFilter method to apply gamma correction to an image.
+ * Gamma correction filter.
+ * Implements the Filters interface & overrides the applyFilter method to apply gamma correction to the image.
  */
 public class GammaCorrectionFilter implements Filters {
     private final double[] gammaLUT;
 
     /**
-     * Constructor for the GammaCorrectionFilter class.
-     * It takes a gamma value as input and creates a lookup table (LUT) for gamma correction.
+     * Takes a gamma value as input and creates a lookup table (LUT) for gamma correction.
      *
      * @param gamma The gamma value for the gamma correction. It must be a positive number.
      * @throws IllegalArgumentException if the gamma value is not positive.
@@ -28,10 +27,10 @@ public class GammaCorrectionFilter implements Filters {
     }
 
     /**
-     * This method applies the gamma correction filter to an image.
+     * Applies the gamma correction filter to an image.
      *
-     * @param image The image to which the filter is to be applied.
-     * @return The image after applying the gamma correction filter.
+     * @param image Image to which the filter is to be applied.
+     * @return Image after applying the gamma correction filter.
      */
     @Override
     public Image applyFilter(Image image) {
