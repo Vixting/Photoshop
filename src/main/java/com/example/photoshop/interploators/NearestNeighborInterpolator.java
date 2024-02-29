@@ -10,7 +10,7 @@ import javafx.scene.paint.Color;
 public class NearestNeighborInterpolator implements Interpolator {
 
     /**
-     * This method applies the nearest neighbor interpolation to a pixel.
+     * Applies the nearest neighbor interpolation to a pixel.
      *
      * @param reader PixelReader of the image.
      * @param x x-coordinate of the pixel.
