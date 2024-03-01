@@ -215,6 +215,20 @@ public class Photoshop extends Application {
         });
     }
 
+    private void updateStatusLabel(String text, boolean isProcessing) {
+        Platform.runLater(() -> {
+            statusLabel.setText(text);
+            progressIndicator.setVisible(isProcessing);
+        });
+    }
+
+
+    private void cancelPreviousTask() {
+        if (lastTask != null && !lastTask.isDone()) {
+            lastTask.cancel(true);
+        }
+    }
+
     private void updateImageAsync(Image originalImage) {
         cancelPreviousTask();
         double currentScale = resizeSlider.getValue();
@@ -230,20 +244,6 @@ public class Photoshop extends Application {
                 updateStatusLabel("Processing complete", false);
             });
         });
-    }
-
-    private void updateStatusLabel(String text, boolean isProcessing) {
-        Platform.runLater(() -> {
-            statusLabel.setText(text);
-            progressIndicator.setVisible(isProcessing);
-        });
-    }
-
-
-    private void cancelPreviousTask() {
-        if (lastTask != null && !lastTask.isDone()) {
-            lastTask.cancel(true);
-        }
     }
 
     private Image processImage(Image originalImage, double scale, double gamma) {

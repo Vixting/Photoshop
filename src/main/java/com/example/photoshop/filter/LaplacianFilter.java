@@ -5,16 +5,10 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
+import java.util.stream.IntStream;
 
-/**
- * Represents a Laplacian filter.
- * Implements the Filters interface & overrides the applyFilter method to apply the Laplacian filter to an image.
- */
 public class LaplacianFilter implements Filters {
 
-    /**
-     * Laplacian filter matrix used for edge detection.
-     */
     private static final int[][] LAPLACIAN_FILTER = {
             {-4, -1, 0, -1, -4},
             {-1, 2, 3, 2, -1},
@@ -23,12 +17,6 @@ public class LaplacianFilter implements Filters {
             {-4, -1, 0, -1, -4}
     };
 
-    /**
-     * Applies the Laplacian filter to an image.
-     *
-     * @param image Image to which the filter is to be applied.
-     * @return Image after applying the Laplacian filter.
-     */
     @Override
     public Image applyFilter(Image image) {
         int width = (int) image.getWidth();
@@ -37,16 +25,44 @@ public class LaplacianFilter implements Filters {
         PixelReader reader = image.getPixelReader();
         PixelWriter writer = result.getPixelWriter();
 
+        double[][] grayScales = new double[height][width];
+        double[][] intensities = new double[height][width];
+        double[] minMaxIntensity = {Double.MAX_VALUE, Double.MIN_VALUE};
+
+        // Precompute grayscale values
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                writer.setColor(x, y, applyKernel(reader, x, y, width, height));
+                Color color = reader.getColor(x, y);
+                grayScales[y][x] = color.getRed() * 0.21 + color.getGreen() * 0.72 + color.getBlue() * 0.07;
+            }
+        }
+
+        // Apply filter using parallel processing
+        IntStream.range(0, height).parallel().forEach(y -> {
+            for (int x = 0; x < width; x++) {
+                double intensity = applyKernel(grayScales, x, y, width, height);
+                intensities[y][x] = intensity;
+                synchronized (minMaxIntensity) {
+                    minMaxIntensity[0] = Math.min(minMaxIntensity[0], intensity);
+                    minMaxIntensity[1] = Math.max(minMaxIntensity[1], intensity);
+                }
+            }
+        });
+
+        // Normalize and write the final image
+        double minIntensity = minMaxIntensity[0];
+        double maxIntensity = minMaxIntensity[1];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                double normalizedIntensity = normalizeIntensity(intensities[y][x], minIntensity, maxIntensity);
+                writer.setColor(x, y, new Color(normalizedIntensity, normalizedIntensity, normalizedIntensity, 1.0));
             }
         }
 
         return result;
     }
 
-    private Color applyKernel(PixelReader reader, int x, int y, int width, int height) {
+    private double applyKernel(double[][] grayScales, int x, int y, int width, int height) {
         double intensity = 0;
         int kernelSize = LAPLACIAN_FILTER.length;
 
@@ -54,25 +70,18 @@ public class LaplacianFilter implements Filters {
             for (int dx = 0; dx < kernelSize; dx++) {
                 int imageX = clamp(x - kernelSize / 2 + dx, 0, width - 1);
                 int imageY = clamp(y - kernelSize / 2 + dy, 0, height - 1);
-
-                Color pixelColor = reader.getColor(imageX, imageY);
-                double grayScale = (pixelColor.getRed() + pixelColor.getGreen() + pixelColor.getBlue()) / 3;
-                intensity += grayScale * LAPLACIAN_FILTER[dy][dx];
+                intensity += grayScales[imageY][imageX] * LAPLACIAN_FILTER[dy][dx];
             }
         }
-
-        intensity = normalizeIntensity(intensity);
-        return new Color(intensity, intensity, intensity, 1.0);
+        return intensity;
     }
 
-    private <T extends Comparable<T>> T clamp(T value, T min, T max) {
-        if (value.compareTo(min) < 0) return min;
-        if (value.compareTo(max) > 0) return max;
-        return value;
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(value, max));
     }
 
-    private double normalizeIntensity(double intensity) {
-        intensity = (intensity + 4) / 8;
-        return clamp(intensity, 0.0, 1.0);
+    private double normalizeIntensity(double intensity, double minIntensity, double maxIntensity) {
+        return maxIntensity == minIntensity ? 0 : (intensity - minIntensity) / (maxIntensity - minIntensity);
     }
 }
+
