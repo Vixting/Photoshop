@@ -4,11 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Factory for creating filter instances.
- * Maintains a map of filter names to their corresponding classes.
- * Provides methods to create a filter instance and to get the names of all available filters.
- */
 public class FilterFactory {
     // Map of filter names to their corresponding classes
     private static final Map<String, Class<? extends Filters>> filterMap = new HashMap<>();

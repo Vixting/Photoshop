@@ -6,18 +6,16 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-/**
- * Gamma correction filter.
- * Implements the Filters interface & overrides the applyFilter method to apply gamma correction to the image.
- */
 public class GammaCorrectionFilter implements Filters {
+    // Lookup table for gamma correction.
     private final double[] gammaLUT;
 
     /**
-     * Takes a gamma value as input and creates a lookup table (LUT) for gamma correction.
+     * Constructor to initialize the gamma correction filter.
+     * It creates a lookup table for fast gamma correction of pixel values.
      *
-     * @param gamma The gamma value for the gamma correction. It must be a positive number.
-     * @throws IllegalArgumentException if the gamma value is not positive.
+     * @param gamma The gamma value for correction. Must be positive.
+     * @throws IllegalArgumentException if gamma is not positive.
      */
     public GammaCorrectionFilter(double gamma) {
         if (gamma <= 0) {
@@ -27,10 +25,10 @@ public class GammaCorrectionFilter implements Filters {
     }
 
     /**
-     * Applies the gamma correction filter to an image.
+     * Applies gamma correction to an entire image.
      *
-     * @param image Image to which the filter is to be applied.
-     * @return Image after applying the gamma correction filter.
+     * @param image The image to which the gamma correction is applied.
+     * @return A new image with gamma correction applied.
      */
     @Override
     public Image applyFilter(Image image) {
@@ -40,6 +38,7 @@ public class GammaCorrectionFilter implements Filters {
         PixelReader reader = image.getPixelReader();
         PixelWriter writer = correctedImage.getPixelWriter();
 
+        // Iterate over all pixels and apply gamma correction.
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 writer.setColor(x, y, applyGammaCorrection(reader.getColor(x, y)));
@@ -49,6 +48,12 @@ public class GammaCorrectionFilter implements Filters {
         return correctedImage;
     }
 
+    /**
+     * Creates a lookup table (LUT) for gamma correction.
+     *
+     * @param gamma The gamma correction value.
+     * @return An array representing the LUT for gamma correction.
+     */
     private double[] createGammaLUT(double gamma) {
         double[] lut = new double[256];
         double inverseGamma = 1.0 / gamma;
@@ -58,6 +63,7 @@ public class GammaCorrectionFilter implements Filters {
         return lut;
     }
 
+    // Applies gamma correction to a single color using the precomputed LUT.
     private Color applyGammaCorrection(Color color) {
         return new Color(
                 gammaLUT[(int) (color.getRed() * 255)],
@@ -66,4 +72,5 @@ public class GammaCorrectionFilter implements Filters {
                 color.getOpacity()
         );
     }
+
 }

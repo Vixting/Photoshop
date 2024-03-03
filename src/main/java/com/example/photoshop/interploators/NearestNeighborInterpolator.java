@@ -3,10 +3,6 @@ package com.example.photoshop.interploators;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
-/**
- * Represents a nearest neighbor interpolator.
- * Implements the Interpolator interface & overrides the interpolate method to apply nearest neighbor interpolation.
- */
 public class NearestNeighborInterpolator implements Interpolator {
 
     /**

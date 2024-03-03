@@ -5,44 +5,60 @@ import javafx.scene.paint.Color;
 
 public class BilinearInterpolator implements Interpolator {
 
+    /**
+     * Performs bilinear interpolation for a given point (x, y) in the image.
+     *
+     * @param reader PixelReader to access pixel data from the image.
+     * @param x X-coordinate of the point for interpolation.
+     * @param y Y-coordinate of the point for interpolation.
+     * @param maxWidth Maximum width of the image.
+     * @param maxHeight Maximum height of the image.
+     * @return Interpolated color at the specified point.
+     */
     @Override
     public Color interpolate(PixelReader reader, double x, double y, int maxWidth, int maxHeight) {
-        int xFloor = clamp((int) x, 0, maxWidth - 1);
-        int yFloor = clamp((int) y, 0, maxHeight - 1);
-        int xCeiling = clamp(xFloor + 1, 0, maxWidth - 1);
-        int yCeiling = clamp(yFloor + 1, 0, maxHeight - 1);
+        int xFloor = (int) x;
+        int yFloor = (int) y;
+        int xCeil = Math.min(xFloor + 1, maxWidth - 1);
+        int yCeil = Math.min(yFloor + 1, maxHeight - 1);
 
         double xFraction = x - xFloor;
         double yFraction = y - yFloor;
 
         Color topLeft = reader.getColor(xFloor, yFloor);
-        Color topRight = reader.getColor(xCeiling, yFloor);
-        Color bottomLeft = reader.getColor(xFloor, yCeiling);
-        Color bottomRight = reader.getColor(xCeiling, yCeiling);
+        Color topRight = reader.getColor(xCeil, yFloor);
+        Color bottomLeft = reader.getColor(xFloor, yCeil);
+        Color bottomRight = reader.getColor(xCeil, yCeil);
 
-        double r1 = interpolateComponent(topLeft.getRed(), topRight.getRed(), xFraction);
-        double g1 = interpolateComponent(topLeft.getGreen(), topRight.getGreen(), xFraction);
-        double b1 = interpolateComponent(topLeft.getBlue(), topRight.getBlue(), xFraction);
-        double a1 = interpolateComponent(topLeft.getOpacity(), topRight.getOpacity(), xFraction);
-
-        double r2 = interpolateComponent(bottomLeft.getRed(), bottomRight.getRed(), xFraction);
-        double g2 = interpolateComponent(bottomLeft.getGreen(), bottomRight.getGreen(), xFraction);
-        double b2 = interpolateComponent(bottomLeft.getBlue(), bottomRight.getBlue(), xFraction);
-        double a2 = interpolateComponent(bottomLeft.getOpacity(), bottomRight.getOpacity(), xFraction);
-
-        return new Color(
-                interpolateComponent(r1, r2, yFraction),
-                interpolateComponent(g1, g2, yFraction),
-                interpolateComponent(b1, b2, yFraction),
-                interpolateComponent(a1, a2, yFraction)
-        );
+        return interpolateColors(topLeft, topRight, bottomLeft, bottomRight, xFraction, yFraction);
     }
 
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+
+    // Interpolates colors based on the fractional positions
+    private Color interpolateColors(Color topLeft, Color topRight, Color bottomLeft, Color bottomRight, double xFraction, double yFraction) {
+        // Interpolate the color components separately
+        double r = interpolate(topLeft.getRed(), topRight.getRed(), bottomLeft.getRed(), bottomRight.getRed(), xFraction, yFraction);
+        double g = interpolate(topLeft.getGreen(), topRight.getGreen(), bottomLeft.getGreen(), bottomRight.getGreen(), xFraction, yFraction);
+        double b = interpolate(topLeft.getBlue(), topRight.getBlue(), bottomLeft.getBlue(), bottomRight.getBlue(), xFraction, yFraction);
+        double a = interpolate(topLeft.getOpacity(), topRight.getOpacity(), bottomLeft.getOpacity(), bottomRight.getOpacity(), xFraction, yFraction);
+
+        // Return the interpolated color
+        return new Color(r, g, b, a);
     }
 
-    private double interpolateComponent(double start, double end, double fraction) {
+    // Performs linear interpolation between two values based on a fractional position
+    private double interpolate(double topLeft, double topRight, double bottomLeft, double bottomRight, double xFraction, double yFraction) {
+        // Interpolate along the top and bottom edges
+        double top = interpolateLine(topLeft, topRight, xFraction);
+        double bottom = interpolateLine(bottomLeft, bottomRight, xFraction);
+
+        // Interpolate between the top and bottom interpolations
+        return interpolateLine(top, bottom, yFraction);
+    }
+
+    // Linearly interpolates between two values based on a fraction
+    private double interpolateLine(double start, double end, double fraction) {
+        // Linear interpolation formula
         return start + fraction * (end - start);
     }
 }

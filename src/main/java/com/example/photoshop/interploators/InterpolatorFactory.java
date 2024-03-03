@@ -4,11 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Factory for creating interpolator instances.
- * Maintains a map of interpolator names to their corresponding classes.
- * Provides methods to create an interpolator instance & to get the names of all available interpolators.
- */
 public class InterpolatorFactory {
     // Map of interpolator names to their corresponding classes
     private static final Map<String, Class<? extends Interpolator>> interpolatorMap = new HashMap<>();
