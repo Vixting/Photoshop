@@ -72,5 +72,4 @@ public class GammaCorrectionFilter implements Filters {
                 color.getOpacity()
         );
     }
-
 }

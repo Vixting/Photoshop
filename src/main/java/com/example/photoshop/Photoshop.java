@@ -37,6 +37,8 @@ public class Photoshop extends Application {
     private final Slider resizeSlider = new Slider(0.1, 5.0, 1.0);
     private double initialX, initialY; // For tracking mouse drag
     private String currentInterpolationMethod = "Bilinear";
+    private double zoomLevel = 1.0; // Default zoom level
+
     private String currentFilter = "None";
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Button resetButton = new Button("Reset Image");
@@ -56,9 +58,7 @@ public class Photoshop extends Application {
     // Resets the image view to its original state
     private void resetImage(Image originalImage) {
         // Cancel any ongoing image processing task
-        if (lastTask != null && !lastTask.isDone()) {
-            lastTask.cancel(true);
-        }
+        cancelPreviousTask();
         // Reset image transformations and settings
         imageView.setImage(originalImage);
         imageView.setScaleX(1.0);
@@ -152,12 +152,18 @@ public class Photoshop extends Application {
 
     // Handles zooming in or out of the image on scroll events.
     private void handleScroll(ScrollEvent event) {
-        // Determines the zoom factor based on the scroll direction.
         double zoomFactor = event.getDeltaY() < 0 ? 0.95 : 1.05;
+        zoomLevel *= zoomFactor;
+        zoomLevel = clampScale(zoomLevel);
 
-        // Applies and clamps the new scale to the image.
-        imageView.setScaleX(clampScale(imageView.getScaleX() * zoomFactor));
-        imageView.setScaleY(clampScale(imageView.getScaleY() * zoomFactor));
+        double newResizeValue = zoomLevel;
+        resizeSlider.setValue(newResizeValue);
+
+        try {
+            updateImageAsync(loadImage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Clamps the scale of the image to predefined min and max values.
@@ -221,7 +227,7 @@ public class Photoshop extends Application {
             String label = slider == gammaSlider ? "Gamma" : "Resize";
             String effect = newValue.doubleValue() < 1.0 ? (slider == gammaSlider ? "Darker" : "Smaller") : (slider == gammaSlider ? "Brighter" : "Larger");
             // Update the value label to reflect the current state.
-            valueLabel.setText(String.format("%s: %.2f (%s)", label, newValue.doubleValue(), effect));
+            valueLabel.setText(String.format("%s: %.4f (%s)", label, newValue.doubleValue(), effect));
             // Initiate an asynchronous update of the image.
             updateImageAsync(originalImage);
         });
@@ -266,10 +272,8 @@ public class Photoshop extends Application {
     }
 
     // Processes the image by applying gamma correction and resizing.
-    private Image processImage(Image originalImage, double scale, double gamma) {
-        // Apply gamma correction filter.
+    private Image processImage(Image originalImage, double scale, double gamma) {        // Apply gamma correction filter.
         Image filteredImage = applyFilters(originalImage, gamma);
-
         // Calculate new dimensions for resizing.
         int newWidth = (int) (filteredImage.getWidth() * scale);
         int newHeight = (int) (filteredImage.getHeight() * scale);
